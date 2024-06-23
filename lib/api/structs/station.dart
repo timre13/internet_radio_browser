@@ -22,8 +22,8 @@ class Station {
   final String homepage;
   @JsonKey(name: "favicon")
   final String favicon;
-  @JsonKey(name: "tags")
-  final String tags;
+  @JsonKey(name: "tags", fromJson: _strValsFromJson, toJson: _strValsToJson)
+  final List<String> tags;
   @JsonKey(name: "country")
   final String country;
   @JsonKey(name: "countrycode")
@@ -32,10 +32,11 @@ class Station {
   final dynamic iso31662;
   @JsonKey(name: "state")
   final String state;
-  @JsonKey(name: "language")
-  final String language;
-  @JsonKey(name: "languagecodes")
-  final String languagecodes;
+  @JsonKey(name: "language", fromJson: _strValsFromJson, toJson: _strValsToJson)
+  final List<String> language;
+  @JsonKey(
+      name: "languagecodes", fromJson: _strValsFromJson, toJson: _strValsToJson)
+  final List<String> languagecodes;
   @JsonKey(name: "votes")
   final int votes;
   @JsonKey(name: "lastchangetime_iso8601")
@@ -67,7 +68,7 @@ class Station {
   @JsonKey(name: "geo_long")
   final double? geoLong;
   @JsonKey(name: "has_extended_info")
-  final bool hasExtendedInfo;
+  final bool? hasExtendedInfo;
 
   Station({
     required this.changeuuid,
@@ -110,6 +111,10 @@ class Station {
 
   @override
   String toString() => jsonEncode(toJson());
+
+  static List<String> _strValsFromJson(String input) =>
+      input.split(",").toList(growable: false);
+  static String _strValsToJson(List<String> input) => input.join(",");
 }
 
 enum Codec {

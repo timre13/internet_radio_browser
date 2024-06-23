@@ -24,7 +24,7 @@ class _StationListWidgetState extends State<StationListWidget> {
                 DataCell(Text(e.name)),
                 DataCell(Text(e.countrycode)),
                 DataCell(Text(e.votes.toString())),
-                DataCell(Text(e.languagecodes)),
+                DataCell(Text(e.languagecodes.join("+"))),
               ]))
           .toList(growable: false),
       columns: const [
