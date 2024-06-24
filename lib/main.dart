@@ -30,6 +30,7 @@ class App extends StatefulWidget {
 class _AppState extends State<App> {
   List<Station> stations = [];
   late DraggableScrollableController sheetCont;
+  bool isPlaying = false;
 
   @override
   void initState() {
@@ -52,6 +53,8 @@ class _AppState extends State<App> {
   @override
   Widget build(BuildContext context) {
     const double minSheetHeightRatio = 0.1;
+    final double minSheetHeightPx =
+        MediaQuery.sizeOf(context).height * minSheetHeightRatio;
 
     return MaterialApp(
       title: 'Flutter Demo',
@@ -63,9 +66,7 @@ class _AppState extends State<App> {
           children: [
             SafeArea(
                 child: Padding(
-                    padding: EdgeInsets.only(
-                        bottom: MediaQuery.sizeOf(context).height *
-                            minSheetHeightRatio),
+                    padding: EdgeInsets.only(bottom: minSheetHeightPx),
                     child: StationListWidget(stations: stations))),
             Positioned.fill(
               child: SizedBox.expand(
@@ -73,14 +74,40 @@ class _AppState extends State<App> {
                   minChildSize: minSheetHeightRatio,
                   maxChildSize: 1.0,
                   initialChildSize: minSheetHeightRatio,
+                  snapSizes: const [minSheetHeightRatio, 1.0],
+                  snap: true,
                   builder: (context, scrollController) => SingleChildScrollView(
                     controller: scrollController,
                     child: Container(
                       color: Colors.grey.shade900,
                       child: SizedBox(
-                          height: MediaQuery.sizeOf(context).height,
-                          child: const Column(
-                              children: [Placeholder(), Placeholder()])),
+                        height: MediaQuery.sizeOf(context).height,
+                        child: Align(
+                          alignment: Alignment.topCenter,
+                          child: SizedBox(
+                            height: minSheetHeightPx,
+                            child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  IconButton(
+                                      onPressed: () {
+                                        setState(() {
+                                          isPlaying = !isPlaying;
+                                          print("Toggle");
+                                        });
+                                      },
+                                      padding: EdgeInsets.zero,
+                                      icon: Icon(
+                                        size: minSheetHeightPx * 0.95,
+                                        isPlaying
+                                            ? Icons.pause_circle
+                                            : Icons.play_circle,
+                                      ))
+                                ]),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
