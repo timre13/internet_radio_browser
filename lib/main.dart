@@ -29,6 +29,7 @@ class App extends StatefulWidget {
 
 class _AppState extends State<App> {
   List<Station> stations = [];
+  late DraggableScrollableController sheetCont;
 
   @override
   void initState() {
@@ -43,17 +44,51 @@ class _AppState extends State<App> {
       },
     );
 
+    sheetCont = DraggableScrollableController();
+
     super.initState();
   }
 
   @override
   Widget build(BuildContext context) {
+    const double minSheetHeightRatio = 0.1;
+
     return MaterialApp(
-        title: 'Flutter Demo',
-        theme: ThemeData.dark(
-          useMaterial3: true,
+      title: 'Flutter Demo',
+      theme: ThemeData.dark(
+        useMaterial3: true,
+      ),
+      home: Scaffold(
+        body: Stack(
+          children: [
+            SafeArea(
+                child: Padding(
+                    padding: EdgeInsets.only(
+                        bottom: MediaQuery.sizeOf(context).height *
+                            minSheetHeightRatio),
+                    child: StationListWidget(stations: stations))),
+            Positioned.fill(
+              child: SizedBox.expand(
+                child: DraggableScrollableSheet(
+                  minChildSize: minSheetHeightRatio,
+                  maxChildSize: 1.0,
+                  initialChildSize: minSheetHeightRatio,
+                  builder: (context, scrollController) => SingleChildScrollView(
+                    controller: scrollController,
+                    child: Container(
+                      color: Colors.grey.shade900,
+                      child: SizedBox(
+                          height: MediaQuery.sizeOf(context).height,
+                          child: const Column(
+                              children: [Placeholder(), Placeholder()])),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+          ],
         ),
-        home: SafeArea(
-            child: Material(child: StationListWidget(stations: stations))));
+      ),
+    );
   }
 }
