@@ -12,20 +12,37 @@ class StationListWidget extends StatefulWidget {
 }
 
 class _StationListWidgetState extends State<StationListWidget> {
+  int selectedStationI = -1;
+
   @override
   Widget build(BuildContext context) {
     return SingleChildScrollView(
         child: DataTable(
+      showCheckboxColumn: false,
       rows: widget.stations
-          .map((e) => DataRow(cells: [
-                DataCell(e.favicon.isNotEmpty
-                    ? LoadingNetworkImage(url: e.favicon)
-                    : const Icon(Icons.radio, size: 40)),
-                DataCell(Text(e.name)),
-                DataCell(Text(e.countrycode)),
-                DataCell(Text(e.votes.toString())),
-                DataCell(Text(e.languagecodes.join("+"))),
-              ]))
+          .asMap()
+          .map((i, e) => MapEntry(
+              i,
+              DataRow(
+                  cells: [
+                    DataCell(e.favicon.isNotEmpty
+                        ? LoadingNetworkImage(url: e.favicon)
+                        : const Icon(Icons.radio, size: 40)),
+                    DataCell(Text(e.name)),
+                    DataCell(Text(e.countrycode)),
+                    DataCell(Text(e.votes.toString())),
+                    DataCell(Text(e.languagecodes.join("+"))),
+                  ],
+                  selected: selectedStationI == i,
+                  onSelectChanged: (value) {
+                    setState(() {
+                      selectedStationI = i;
+                    });
+                  },
+                  color: WidgetStatePropertyAll(selectedStationI == i
+                      ? Colors.amber.withAlpha(140)
+                      : Colors.transparent))))
+          .values
           .toList(growable: false),
       columns: const [
         DataColumn(label: Text("Icon")),
