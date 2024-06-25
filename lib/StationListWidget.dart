@@ -37,10 +37,10 @@ class _StationListWidgetState extends State<StationListWidget> {
                     model.selStationI = i;
                     model.isPlaying = true;
                     assert(model.selStation != null);
-                    print("Playing URL: ${model.selStation?.url}");
-                    // TODO: Handle when URL points to a playlist (PLS, M3U, ...)
+                    print("Playing URL: ${model.selStation?.urlResolved}");
+                    print(model.selStation);
                     await model.player
-                        .setSourceUrl(model.selStation?.url ?? "");
+                        .setSourceUrl(model.selStation?.urlResolved ?? "");
                     model.player.resume();
                   },
                   color: WidgetStatePropertyAll(model.selStationI == i
