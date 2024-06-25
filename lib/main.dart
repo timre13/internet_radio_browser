@@ -22,7 +22,7 @@ class PlayerModel extends ChangeNotifier {
 
   PlayerModel() {
     getStationsBy(Filter.countrycodeexact, "jp",
-            order: Order.votes, reverse: true, limit: 100)
+            hideBroken: true, order: Order.votes, reverse: true, limit: 100)
         .then(
       (value) {
         print("Found ${value.length} stations");
