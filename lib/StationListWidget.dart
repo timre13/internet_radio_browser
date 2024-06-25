@@ -1,25 +1,24 @@
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
-import 'api/structs/station.dart';
+import 'main.dart';
 
 class StationListWidget extends StatefulWidget {
-  const StationListWidget({super.key, required this.stations});
-
-  final List<Station> stations;
+  const StationListWidget({super.key});
 
   @override
   State<StationListWidget> createState() => _StationListWidgetState();
 }
 
 class _StationListWidgetState extends State<StationListWidget> {
-  int selectedStationI = -1;
-
   @override
   Widget build(BuildContext context) {
+    final model = Provider.of<PlayerModel>(context);
+
     return SingleChildScrollView(
         child: DataTable(
       showCheckboxColumn: false,
-      rows: widget.stations
+      rows: model.stations
           .asMap()
           .map((i, e) => MapEntry(
               i,
@@ -33,13 +32,18 @@ class _StationListWidgetState extends State<StationListWidget> {
                     DataCell(Text(e.votes.toString())),
                     DataCell(Text(e.languagecodes.join("+"))),
                   ],
-                  selected: selectedStationI == i,
-                  onSelectChanged: (value) {
-                    setState(() {
-                      selectedStationI = i;
-                    });
+                  selected: model.selStationI == i,
+                  onSelectChanged: (value) async {
+                    model.selStationI = i;
+                    model.isPlaying = true;
+                    assert(model.selStation != null);
+                    print("Playing URL: ${model.selStation?.url}");
+                    // TODO: Handle when URL points to a playlist (PLS, M3U, ...)
+                    await model.player
+                        .setSourceUrl(model.selStation?.url ?? "");
+                    model.player.resume();
                   },
-                  color: WidgetStatePropertyAll(selectedStationI == i
+                  color: WidgetStatePropertyAll(model.selStationI == i
                       ? Colors.amber.withAlpha(140)
                       : Colors.transparent))))
           .values
