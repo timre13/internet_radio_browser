@@ -34,14 +34,18 @@ class _StationListWidgetState extends State<StationListWidget> {
                   ],
                   selected: model.selStationI == i,
                   onSelectChanged: (value) async {
+                    model.isLoading = true;
                     model.selStationI = i;
-                    model.isPlaying = true;
                     assert(model.selStation != null);
                     print("Playing URL: ${model.selStation?.urlResolved}");
                     print(model.selStation);
                     await model.player
                         .setSourceUrl(model.selStation?.urlResolved ?? "");
-                    model.player.resume();
+                    print("Set URL");
+                    await model.player.resume();
+                    model.isPlaying = true;
+                    model.isLoading = false;
+                    print("Started");
                   },
                   color: WidgetStatePropertyAll(model.selStationI == i
                       ? Colors.amber.withAlpha(140)
@@ -70,6 +74,8 @@ class LoadingNetworkImage extends StatelessWidget {
     return Image.network(url,
         width: size,
         height: size,
+        cacheWidth: size.toInt(),
+        cacheHeight: size.toInt(),
         loadingBuilder: (context, child, loadingProgress) {
           if (loadingProgress?.expectedTotalBytes !=
               loadingProgress?.cumulativeBytesLoaded) {

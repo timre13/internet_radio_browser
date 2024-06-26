@@ -19,6 +19,7 @@ class PlayerModel extends ChangeNotifier {
   bool _isPlaying = false;
   int _selStationI = -1;
   final AudioPlayer _player = AudioPlayer();
+  bool _isLoading = false;
 
   PlayerModel() {
     getStationsBy(Filter.countrycodeexact, "jp",
@@ -30,6 +31,9 @@ class PlayerModel extends ChangeNotifier {
         notifyListeners();
       },
     );
+
+    _player.onPlayerStateChanged
+        .listen((event) => print("State changed to ${event.name}"));
   }
 
   UnmodifiableListView<Station> get stations => UnmodifiableListView(_stations);
@@ -39,6 +43,7 @@ class PlayerModel extends ChangeNotifier {
       !(selStationI == -1 || selStationI >= stations.length);
   Station? get selStation => isStationSelected ? stations[selStationI] : null;
   AudioPlayer get player => _player;
+  bool get isLoading => _isLoading;
 
   set stations(List<Station> val) {
     _stations = val;
@@ -57,6 +62,11 @@ class PlayerModel extends ChangeNotifier {
 
   set selStationI(int val) {
     _selStationI = val;
+    notifyListeners();
+  }
+
+  set isLoading(bool val) {
+    _isLoading = val;
     notifyListeners();
   }
 }
@@ -116,35 +126,43 @@ class _AppState extends State<App> {
                           child: SizedBox(
                             height: minSheetHeightPx,
                             child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                crossAxisAlignment: CrossAxisAlignment.center,
-                                children: [
-                                  Consumer<PlayerModel>(
-                                      builder: (context, model, child) =>
-                                          IconButton(
-                                              onPressed: () {
-                                                setState(() {
-                                                  if (!model
-                                                      .isStationSelected) {
-                                                    return;
-                                                  }
-                                                  model.toggleIsPlaying();
-                                                  if (model.isPlaying) {
-                                                    model.player.resume();
-                                                  } else {
-                                                    model.player.pause();
-                                                  }
-                                                  print("Toggle");
-                                                });
-                                              },
-                                              padding: EdgeInsets.zero,
-                                              icon: Icon(
-                                                size: minSheetHeightPx * 0.95,
-                                                model.isPlaying
-                                                    ? Icons.pause_circle
-                                                    : Icons.play_circle,
-                                              )))
-                                ]),
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              crossAxisAlignment: CrossAxisAlignment.center,
+                              children: [
+                                Consumer<PlayerModel>(
+                                  builder: (context, model, child) => Stack(
+                                    alignment: Alignment.center,
+                                    children: [
+                                      SizedBox.square(
+                                          dimension: minSheetHeightPx * 0.95,
+                                          child: CircularProgressIndicator(
+                                              value: model.isLoading ? null : 0,
+                                              color: Colors.amber)),
+                                      IconButton(
+                                        onPressed: () async {
+                                          if (!model.isStationSelected) {
+                                            return;
+                                          }
+                                          if (model.isPlaying) {
+                                            await model.player.pause();
+                                          } else {
+                                            await model.player.resume();
+                                          }
+                                          model.toggleIsPlaying();
+                                          print("Toggle");
+                                        },
+                                        padding: EdgeInsets.zero,
+                                        icon: Icon(
+                                            model.isPlaying
+                                                ? Icons.pause_circle
+                                                : Icons.play_circle,
+                                            size: minSheetHeightPx * 0.95),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
                         ),
                       ),
