@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:audio_service/audio_service.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 part 'station.g.dart';
@@ -115,6 +116,15 @@ class Station {
   static List<String> _strValsFromJson(String input) =>
       input.split(",").toList(growable: false);
   static String _strValsToJson(List<String> input) => input.join(",");
+
+  MediaItem toMediaItem() {
+    return MediaItem(
+        id: urlResolved,
+        title: name,
+        artUri: favicon.isEmpty ? null : Uri.parse(favicon),
+        playable: true,
+        genre: tags.join(", "));
+  }
 }
 
 enum Codec {

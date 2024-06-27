@@ -1,12 +1,13 @@
 import 'dart:collection';
 
-import 'package:audioplayers/audioplayers.dart';
+import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:internet_radio_browser/StationListWidget.dart';
 import 'package:internet_radio_browser/api/enums.dart';
 import 'package:internet_radio_browser/api/query.dart';
 import 'package:provider/provider.dart';
 
+import 'CustomAudioHandler.dart';
 import 'api/structs/station.dart';
 
 void main() {
@@ -16,10 +17,8 @@ void main() {
 
 class PlayerModel extends ChangeNotifier {
   List<Station> _stations = [];
-  bool _isPlaying = false;
   int _selStationI = -1;
-  final AudioPlayer _player = AudioPlayer();
-  bool _isLoading = false;
+  AudioHandler? _audioHandler;
 
   PlayerModel() {
     getStationsBy(Filter.countrycodeexact, "jp",
@@ -32,41 +31,42 @@ class PlayerModel extends ChangeNotifier {
       },
     );
 
-    _player.onPlayerStateChanged
-        .listen((event) => print("State changed to ${event.name}"));
+    AudioService.init(
+            builder: () => CustomAudioHandler(),
+            config: const AudioServiceConfig(
+                androidNotificationChannelName: "Audio playback",
+                androidNotificationOngoing: true))
+        .then((value) {
+      print("AudioService initialized");
+      _audioHandler = value;
+      _audioHandler!.playbackState.listen((event) {
+        print("Audio handler playback state changed");
+        notifyListeners();
+      });
+      notifyListeners();
+    });
   }
 
   UnmodifiableListView<Station> get stations => UnmodifiableListView(_stations);
-  bool get isPlaying => _isPlaying;
+  bool get isPlaying => audioHandler!.playbackState.value.playing;
   int get selStationI => _selStationI;
   bool get isStationSelected =>
       !(selStationI == -1 || selStationI >= stations.length);
   Station? get selStation => isStationSelected ? stations[selStationI] : null;
-  AudioPlayer get player => _player;
-  bool get isLoading => _isLoading;
+  AudioHandler? get audioHandler => _audioHandler;
+  bool get isLoading =>
+      audioHandler!.playbackState.value.processingState ==
+          AudioProcessingState.buffering ||
+      audioHandler!.playbackState.value.processingState ==
+          AudioProcessingState.loading;
 
   set stations(List<Station> val) {
     _stations = val;
     notifyListeners();
   }
 
-  set isPlaying(bool val) {
-    _isPlaying = val;
-    notifyListeners();
-  }
-
-  void toggleIsPlaying() {
-    _isPlaying = !_isPlaying;
-    notifyListeners();
-  }
-
   set selStationI(int val) {
     _selStationI = val;
-    notifyListeners();
-  }
-
-  set isLoading(bool val) {
-    _isLoading = val;
     notifyListeners();
   }
 }
@@ -144,11 +144,10 @@ class _AppState extends State<App> {
                                             return;
                                           }
                                           if (model.isPlaying) {
-                                            await model.player.pause();
+                                            await model.audioHandler?.pause();
                                           } else {
-                                            await model.player.resume();
+                                            await model.audioHandler?.play();
                                           }
-                                          model.toggleIsPlaying();
                                           print("Toggle");
                                         },
                                         padding: EdgeInsets.zero,

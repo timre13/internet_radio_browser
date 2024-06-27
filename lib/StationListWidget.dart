@@ -34,17 +34,13 @@ class _StationListWidgetState extends State<StationListWidget> {
                   ],
                   selected: model.selStationI == i,
                   onSelectChanged: (value) async {
-                    model.isLoading = true;
                     model.selStationI = i;
                     assert(model.selStation != null);
                     print("Playing URL: ${model.selStation?.urlResolved}");
                     print(model.selStation);
-                    await model.player
-                        .setSourceUrl(model.selStation?.urlResolved ?? "");
+                    await model.audioHandler
+                        ?.playMediaItem(model.selStation!.toMediaItem());
                     print("Set URL");
-                    await model.player.resume();
-                    model.isPlaying = true;
-                    model.isLoading = false;
                     print("Started");
                   },
                   color: WidgetStatePropertyAll(model.selStationI == i
