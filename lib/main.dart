@@ -34,8 +34,7 @@ class PlayerModel extends ChangeNotifier {
     AudioService.init(
             builder: () => CustomAudioHandler(),
             config: const AudioServiceConfig(
-                androidNotificationChannelName: "Audio playback",
-                androidNotificationOngoing: true))
+                androidNotificationChannelName: "Audio playback"))
         .then((value) {
       print("AudioService initialized");
       _audioHandler = value;
