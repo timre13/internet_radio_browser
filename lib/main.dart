@@ -1,4 +1,5 @@
 import 'dart:collection';
+import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
@@ -6,6 +7,7 @@ import 'package:internet_radio_browser/StationListWidget.dart';
 import 'package:internet_radio_browser/api/enums.dart';
 import 'package:internet_radio_browser/api/query.dart';
 import 'package:provider/provider.dart';
+import 'package:text_scroll/text_scroll.dart';
 
 import 'CustomAudioHandler.dart';
 import 'api/structs/station.dart';
@@ -114,55 +116,16 @@ class _AppState extends State<App> {
                   initialChildSize: minSheetHeightRatio,
                   snapSizes: const [minSheetHeightRatio, 1.0],
                   snap: true,
+                  controller: sheetCont,
                   builder: (context, scrollController) => SingleChildScrollView(
                     controller: scrollController,
                     child: Container(
                       color: Colors.grey.shade900,
                       child: SizedBox(
                         height: MediaQuery.sizeOf(context).height,
-                        child: Align(
-                          alignment: Alignment.topCenter,
-                          child: SizedBox(
-                            height: minSheetHeightPx,
-                            child: Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              crossAxisAlignment: CrossAxisAlignment.center,
-                              children: [
-                                Consumer<PlayerModel>(
-                                  builder: (context, model, child) => Stack(
-                                    alignment: Alignment.center,
-                                    children: [
-                                      SizedBox.square(
-                                          dimension: minSheetHeightPx * 0.95,
-                                          child: CircularProgressIndicator(
-                                              value: model.isLoading ? null : 0,
-                                              color: Colors.amber)),
-                                      IconButton(
-                                        onPressed: () async {
-                                          if (!model.isStationSelected) {
-                                            return;
-                                          }
-                                          if (model.isPlaying) {
-                                            await model.audioHandler?.pause();
-                                          } else {
-                                            await model.audioHandler?.play();
-                                          }
-                                          print("Toggle");
-                                        },
-                                        padding: EdgeInsets.zero,
-                                        icon: Icon(
-                                            model.isPlaying
-                                                ? Icons.pause_circle
-                                                : Icons.play_circle,
-                                            size: minSheetHeightPx * 0.95),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                        ),
+                        child: SheetChild(
+                            minSheetHeightPx: minSheetHeightPx,
+                            scrollController: sheetCont),
                       ),
                     ),
                   ),
@@ -172,6 +135,115 @@ class _AppState extends State<App> {
           ],
         ),
       ),
+    );
+  }
+}
+
+class SheetChild extends StatefulWidget {
+  const SheetChild(
+      {super.key,
+      required this.minSheetHeightPx,
+      required this.scrollController});
+
+  final double minSheetHeightPx;
+  final DraggableScrollableController scrollController;
+
+  @override
+  State<SheetChild> createState() => _SheetChildState();
+}
+
+class _SheetChildState extends State<SheetChild> {
+  @override
+  void initState() {
+    super.initState();
+    widget.scrollController.addListener(() => setState(() {}));
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (true) {
+      return Align(
+        alignment: Alignment.topCenter,
+        child: SizedBox(
+          height: widget.scrollController.pixels,
+          child: Consumer<PlayerModel>(
+            builder: (context, model, child) => Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: <Widget>[
+                    PlayerButton(
+                        size: min(widget.scrollController.pixels * 0.95,
+                            MediaQuery.of(context).size.width * 0.6),
+                        model: model),
+                  ] +
+                  (widget.scrollController.size >= 0.6
+                      ? <Widget>[
+                          TextScroll(model.selStation?.name ?? "---",
+                              mode: TextScrollMode.endless,
+                              intervalSpaces: 10,
+                              style: const TextStyle(fontSize: 30)),
+                          Text(model.selStation?.url ?? "",
+                              textAlign: TextAlign.center),
+                          Text(model.selStation?.homepage ?? "",
+                              textAlign: TextAlign.center),
+                          Text(model.selStation?.country ?? "",
+                              textAlign: TextAlign.center),
+                          Text(model.selStation?.language.join(", ") ?? "",
+                              textAlign: TextAlign.center),
+                          Text(
+                              model.selStation != null &&
+                                      model.selStation!.bitrate != 0
+                                  ? "${model.selStation!.bitrate} kbps"
+                                  : "",
+                              textAlign: TextAlign.center),
+                        ]
+                      : []),
+            ),
+          ),
+        ),
+      );
+    }
+  }
+}
+
+class PlayerButton extends StatefulWidget {
+  const PlayerButton({super.key, required this.size, required this.model});
+
+  final double size;
+  final PlayerModel model;
+
+  @override
+  State<PlayerButton> createState() => _PlayerButtonState();
+}
+
+class _PlayerButtonState extends State<PlayerButton> {
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      alignment: Alignment.center,
+      children: [
+        SizedBox.square(
+            dimension: widget.size,
+            child: CircularProgressIndicator(
+                value: widget.model.isLoading ? null : 0, color: Colors.amber)),
+        IconButton(
+          onPressed: () async {
+            if (!widget.model.isStationSelected) {
+              return;
+            }
+            if (widget.model.isPlaying) {
+              await widget.model.audioHandler?.pause();
+            } else {
+              await widget.model.audioHandler?.play();
+            }
+            print("Toggle");
+          },
+          padding: EdgeInsets.zero,
+          icon: Icon(
+              widget.model.isPlaying ? Icons.pause_circle : Icons.play_circle,
+              size: widget.size),
+        ),
+      ],
     );
   }
 }
