@@ -123,9 +123,7 @@ class _AppState extends State<App> {
                       color: Colors.grey.shade900,
                       child: SizedBox(
                         height: MediaQuery.sizeOf(context).height,
-                        child: SheetChild(
-                            minSheetHeightPx: minSheetHeightPx,
-                            scrollController: sheetCont),
+                        child: SheetChild(scrollController: sheetCont),
                       ),
                     ),
                   ),
@@ -140,12 +138,8 @@ class _AppState extends State<App> {
 }
 
 class SheetChild extends StatefulWidget {
-  const SheetChild(
-      {super.key,
-      required this.minSheetHeightPx,
-      required this.scrollController});
+  const SheetChild({super.key, required this.scrollController});
 
-  final double minSheetHeightPx;
   final DraggableScrollableController scrollController;
 
   @override
