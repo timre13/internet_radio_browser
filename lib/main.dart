@@ -3,13 +3,13 @@ import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
-import 'package:internet_radio_browser/StationListWidget.dart';
 import 'package:internet_radio_browser/api/enums.dart';
 import 'package:internet_radio_browser/api/query.dart';
 import 'package:provider/provider.dart';
 import 'package:text_scroll/text_scroll.dart';
 
 import 'CustomAudioHandler.dart';
+import 'StationListWidget.dart';
 import 'api/structs/station.dart';
 
 void main() {
@@ -20,7 +20,8 @@ void main() {
 class PlayerModel extends ChangeNotifier {
   List<Station> _stations = [];
   int _selStationI = -1;
-  AudioHandler? _audioHandler;
+  late Future<AudioHandler> _audioHandlerFuture;
+  late AudioHandler _audioHandler;
 
   PlayerModel() {
     getStationsBy(Filter.countrycodeexact, "jp",
@@ -33,32 +34,38 @@ class PlayerModel extends ChangeNotifier {
       },
     );
 
-    AudioService.init(
-            builder: () => CustomAudioHandler(),
-            config: const AudioServiceConfig(
-                androidNotificationChannelName: "Audio playback"))
-        .then((value) {
+    _audioHandlerFuture = AudioService.init(
+        builder: () => CustomAudioHandler(),
+        config: const AudioServiceConfig(
+            androidNotificationChannelName: "Audio playback"));
+
+    _audioHandlerFuture.then((value) {
       print("AudioService initialized");
       _audioHandler = value;
-      _audioHandler!.playbackState.listen((event) {
+      _audioHandler.playbackState.listen((event) {
         print("Audio handler playback state changed");
         notifyListeners();
       });
+
       notifyListeners();
     });
   }
 
+  Future<AudioHandler> get audioHandlerFuture => _audioHandlerFuture;
+
   UnmodifiableListView<Station> get stations => UnmodifiableListView(_stations);
-  bool get isPlaying => audioHandler!.playbackState.value.playing;
+  bool get isPlaying => _audioHandler.playbackState.value.playing;
+
   int get selStationI => _selStationI;
   bool get isStationSelected =>
       !(selStationI == -1 || selStationI >= stations.length);
   Station? get selStation => isStationSelected ? stations[selStationI] : null;
-  AudioHandler? get audioHandler => _audioHandler;
+  AudioHandler get audioHandler => _audioHandler;
+
   bool get isLoading =>
-      audioHandler!.playbackState.value.processingState ==
+      _audioHandler.playbackState.value.processingState ==
           AudioProcessingState.buffering ||
-      audioHandler!.playbackState.value.processingState ==
+      _audioHandler.playbackState.value.processingState ==
           AudioProcessingState.loading;
 
   set stations(List<Station> val) {
@@ -100,37 +107,50 @@ class _AppState extends State<App> {
         useMaterial3: true,
       ),
       home: Scaffold(
-        body: Stack(
-          children: [
-            SafeArea(
-                child: Padding(
-                    padding: EdgeInsets.only(bottom: minSheetHeightPx),
-                    child: Consumer<PlayerModel>(
-                        builder: (context, model, child) =>
-                            const StationListWidget()))),
-            Positioned.fill(
-              child: SizedBox.expand(
-                child: DraggableScrollableSheet(
-                  minChildSize: minSheetHeightRatio,
-                  maxChildSize: 1.0,
-                  initialChildSize: minSheetHeightRatio,
-                  snapSizes: const [minSheetHeightRatio, 1.0],
-                  snap: true,
-                  controller: sheetCont,
-                  builder: (context, scrollController) => SingleChildScrollView(
-                    controller: scrollController,
-                    child: Container(
-                      color: Colors.grey.shade900,
-                      child: SizedBox(
-                        height: MediaQuery.sizeOf(context).height,
-                        child: SheetChild(scrollController: sheetCont),
+        body: FutureBuilder(
+          future: Provider.of<PlayerModel>(context).audioHandlerFuture,
+          builder: (context, snapshot) {
+            if (snapshot.hasData) {
+              return Stack(
+                children: [
+                  SafeArea(
+                      child: Padding(
+                          padding: EdgeInsets.only(bottom: minSheetHeightPx),
+                          child: const StationListWidget())),
+                  Positioned.fill(
+                    child: SizedBox.expand(
+                      child: DraggableScrollableSheet(
+                        minChildSize: minSheetHeightRatio,
+                        maxChildSize: 1.0,
+                        initialChildSize: minSheetHeightRatio,
+                        snapSizes: const [minSheetHeightRatio, 1.0],
+                        snap: true,
+                        controller: sheetCont,
+                        builder: (context, scrollController) =>
+                            SingleChildScrollView(
+                          controller: scrollController,
+                          child: Container(
+                            color: Colors.grey.shade900,
+                            child: SizedBox(
+                              height: MediaQuery.sizeOf(context).height,
+                              child: SheetChild(scrollController: sheetCont),
+                            ),
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                ),
-              ),
-            ),
-          ],
+                ],
+              );
+            }
+
+            if (snapshot.hasError) {
+              return Center(
+                  child: Text("Failed to initialize: ${snapshot.error}"));
+            }
+
+            return const CircularProgressIndicator();
+          },
         ),
       ),
     );
@@ -226,9 +246,9 @@ class _PlayerButtonState extends State<PlayerButton> {
               return;
             }
             if (widget.model.isPlaying) {
-              await widget.model.audioHandler?.pause();
+              await widget.model.audioHandler.pause();
             } else {
-              await widget.model.audioHandler?.play();
+              await widget.model.audioHandler.play();
             }
             print("Toggle");
           },
