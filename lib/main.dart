@@ -116,7 +116,8 @@ class _AppState extends State<App> {
                   SafeArea(
                       child: Padding(
                           padding: EdgeInsets.only(bottom: minSheetHeightPx),
-                          child: const StationListWidget())),
+                          child: const SizedBox.expand(
+                              child: StationListWidget()))),
                   Positioned.fill(
                     child: SizedBox.expand(
                       child: DraggableScrollableSheet(
