@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart';
 import 'package:internet_radio_browser/api/enums.dart';
 import 'package:internet_radio_browser/api/query.dart';
 import 'package:provider/provider.dart';
@@ -85,6 +86,40 @@ class App extends StatefulWidget {
   State<App> createState() => _AppState();
 }
 
+void showServerInfo(BuildContext context) {
+  var serverInfo = getServerStats();
+  showDialog(
+      context: context,
+      builder: (context) => Dialog(
+          child: FutureBuilder(
+              future: serverInfo,
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  return DataTable(
+                      columns: const [
+                        DataColumn(label: Text("Key")),
+                        DataColumn(label: Text("Value"))
+                      ],
+                      rows: snapshot.data!
+                          .toJson()
+                          .entries
+                          .map((e) => DataRow(cells: [
+                                DataCell(Text(e.key)),
+                                DataCell(Text(e.value.toString()))
+                              ]))
+                          .toList(growable: false));
+                }
+                if (snapshot.hasError) {
+                  return Center(
+                      child: Text(
+                          "Failed to get server info: ${(snapshot.error as ClientException).message}",
+                          style: const TextStyle(color: Colors.red),
+                          textAlign: TextAlign.center));
+                }
+                return const Center(child: CircularProgressIndicator());
+              })));
+}
+
 class _AppState extends State<App> {
   late DraggableScrollableController sheetCont;
 
@@ -113,11 +148,21 @@ class _AppState extends State<App> {
             if (snapshot.hasData) {
               return Stack(
                 children: [
-                  SafeArea(
-                      child: Padding(
-                          padding: EdgeInsets.only(bottom: minSheetHeightPx),
-                          child: const SizedBox.expand(
-                              child: StationListWidget()))),
+                  Scaffold(
+                      appBar: AppBar(
+                        actions: [
+                          IconButton(
+                              onPressed: () => showServerInfo(context),
+                              icon: const Icon(Icons.dns),
+                              tooltip: "Show Server Information")
+                        ],
+                      ),
+                      body: SafeArea(
+                          child: Padding(
+                              padding:
+                                  EdgeInsets.only(bottom: minSheetHeightPx),
+                              child: const SizedBox.expand(
+                                  child: StationListWidget())))),
                   Positioned.fill(
                     child: SizedBox.expand(
                       child: DraggableScrollableSheet(

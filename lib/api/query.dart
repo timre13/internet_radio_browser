@@ -2,8 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
-import 'package:internet_radio_browser/api/enums.dart';
 
+import 'enums.dart';
+import 'structs/server_stats.dart';
 import 'structs/station.dart';
 
 enum Filter {
@@ -23,6 +24,8 @@ enum Filter {
   tagexact,
 }
 
+const apiBaseUrl = "all.api.radio-browser.info";
+
 Future<List<Station>> getStationsBy(Filter filter, String filterVal,
     {Order order = Order.name,
     bool reverse = false,
@@ -36,7 +39,7 @@ Future<List<Station>> getStationsBy(Filter filter, String filterVal,
   if (filter == Filter.countrycodeexact) filterVal = filterVal.toUpperCase();
 
   var url = Uri.http(
-      "all.api.radio-browser.info",
+      apiBaseUrl,
       "/json/stations/by${filter.name}/$filterVal",
       {
         "order": order,
@@ -53,4 +56,15 @@ Future<List<Station>> getStationsBy(Filter filter, String filterVal,
   return (jsonDecode(utf8.decode(resp.bodyBytes)) as List<dynamic>)
       .map((e) => Station.fromJson(e))
       .toList(growable: false);
+}
+
+Future<ServerStats> getServerStats() async {
+  var url = Uri.http(apiBaseUrl, "/json/stats");
+
+  if (kDebugMode) {
+    print("Sending request to $url");
+  }
+  var resp = await http.get(url);
+
+  return ServerStats.fromJson(jsonDecode(utf8.decode(resp.bodyBytes)));
 }
