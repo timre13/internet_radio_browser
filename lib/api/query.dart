@@ -1,7 +1,9 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:flutter/foundation.dart';
-import 'package:http/http.dart' as http;
+import 'package:http/io_client.dart';
+import 'package:http/retry.dart';
 
 import 'enums.dart';
 import 'structs/server_stats.dart';
@@ -25,6 +27,8 @@ enum Filter {
 }
 
 const apiBaseUrl = "all.api.radio-browser.info";
+final _client = RetryClient(
+    IOClient(HttpClient()..userAgent = "internet_radio_browser/1.0"));
 
 Future<List<Station>> getStationsBy(Filter filter, String filterVal,
     {Order order = Order.name,
@@ -51,7 +55,7 @@ Future<List<Station>> getStationsBy(Filter filter, String filterVal,
   if (kDebugMode) {
     print("Sending request to $url");
   }
-  var resp = await http.get(url);
+  var resp = await _client.get(url);
 
   return (jsonDecode(utf8.decode(resp.bodyBytes)) as List<dynamic>)
       .map((e) => Station.fromJson(e))
@@ -64,7 +68,7 @@ Future<ServerStats> getServerStats() async {
   if (kDebugMode) {
     print("Sending request to $url");
   }
-  var resp = await http.get(url);
+  var resp = await _client.get(url);
 
   return ServerStats.fromJson(jsonDecode(utf8.decode(resp.bodyBytes)));
 }
