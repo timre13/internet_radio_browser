@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart';
 import 'package:http/io_client.dart';
 import 'package:http/retry.dart';
+import 'package:internet_radio_browser/api/structs/country.dart';
 
 import 'enums.dart';
 import 'structs/server_stats.dart';
@@ -120,6 +121,24 @@ Future<List<Station>> searchStations({
   return (jsonDecode(utf8.decode(resp.bodyBytes)) as List<dynamic>)
       .map((e) => Station.fromJson(e))
       .toList(growable: false);
+}
+
+List<Country>? _countryCache;
+Future<List<Country>> getCountries() async {
+  if (_countryCache == null) {
+    var url = Uri.http(apiBaseUrl, "/json/countries");
+
+    if (kDebugMode) {
+      print("Sending request to $url");
+    }
+    var resp = await _client.get(url);
+
+    _countryCache = (jsonDecode(utf8.decode(resp.bodyBytes)) as List<dynamic>)
+        .map((e) => Country.fromJson(e))
+        .toList(growable: false);
+  }
+
+  return Future.value(_countryCache);
 }
 
 Future<ServerStats> getServerStats() async {
