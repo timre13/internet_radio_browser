@@ -62,6 +62,66 @@ Future<List<Station>> getStationsBy(Filter filter, String filterVal,
       .toList(growable: false);
 }
 
+const _searchLimit = 100;
+
+Future<List<Station>> searchStations({
+  String? name,
+  bool? nameExact,
+  String? country,
+  bool? countryExact,
+  String? countryCode,
+  String? language,
+  bool? languageExact,
+  String? tag,
+  bool? tagExact,
+  List<String>? tagList,
+  String? codec,
+  int? bitrateMin,
+  int? bitrateMax,
+  bool? isHttps,
+  Order? order,
+  bool? reverse,
+  int limit = _searchLimit,
+  bool hideBroken = true,
+}) async {
+  var params = {
+    "name": name,
+    "nameExact": nameExact,
+    "country": country,
+    "countryExact": countryExact,
+    "countrycode": countryCode,
+    "language": language,
+    "languageExact": languageExact,
+    "tag": tag,
+    "tagExact": tagExact,
+    "tagList": tagList?.join(","),
+    "codec": codec,
+    "bitrateMin": bitrateMin,
+    "bitrateMax": bitrateMax,
+    "is_https": isHttps,
+    "order": order.toString(),
+    "reverse": reverse,
+    "limit": limit,
+    "hidebroken": hideBroken,
+  };
+  params.removeWhere((key, value) => value == null);
+
+  final url = Uri.http(
+    apiBaseUrl,
+    "/json/stations/search",
+    params.map((key, value) => MapEntry(key, value.toString())),
+  );
+
+  if (kDebugMode) {
+    print("Sending request to $url");
+  }
+  final resp = await _client.get(url);
+
+  return (jsonDecode(utf8.decode(resp.bodyBytes)) as List<dynamic>)
+      .map((e) => Station.fromJson(e))
+      .toList(growable: false);
+}
+
 Future<ServerStats> getServerStats() async {
   var url = Uri.http(apiBaseUrl, "/json/stats");
 

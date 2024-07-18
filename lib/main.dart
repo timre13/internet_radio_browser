@@ -25,6 +25,7 @@ class PlayerModel extends ChangeNotifier {
   late AudioHandler _audioHandler;
 
   PlayerModel() {
+    /*
     getStationsBy(Filter.countrycodeexact, "jp",
             hideBroken: true, order: Order.votes, reverse: true, limit: 100)
         .then(
@@ -34,6 +35,19 @@ class PlayerModel extends ChangeNotifier {
         notifyListeners();
       },
     );
+     */
+
+    searchStations(
+            countryCode: "jp",
+            hideBroken: true,
+            order: Order.votes,
+            reverse: true,
+            limit: 999999)
+        .then((value) {
+      print("Found ${value.length} stations");
+      stations = value;
+      notifyListeners();
+    });
 
     _audioHandlerFuture = AudioService.init(
         builder: () => CustomAudioHandler(),
