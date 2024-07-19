@@ -72,41 +72,41 @@ const _searchLimit = 100;
 @JsonSerializable()
 class SearchStationsParams {
   @JsonKey()
-  final String? name;
+  String? name;
   @JsonKey()
-  final bool? nameExact;
+  bool? nameExact;
   @JsonKey()
-  final String? country;
+  String? country;
   @JsonKey()
-  final bool? countryExact;
+  bool? countryExact;
   @JsonKey(name: "countrycode")
-  final String? countryCode;
+  String? countryCode;
   @JsonKey()
-  final String? language;
+  String? language;
   @JsonKey()
-  final bool? languageExact;
+  bool? languageExact;
   @JsonKey()
-  final String? tag;
+  String? tag;
   @JsonKey()
-  final bool? tagExact;
+  bool? tagExact;
   @JsonKey(fromJson: _tagsFromJson, toJson: _tagsToJson)
-  final List<String>? tagList;
+  List<String>? tagList;
   @JsonKey()
-  final String? codec;
+  String? codec;
   @JsonKey()
-  final int? bitrateMin;
+  int? bitrateMin;
   @JsonKey()
-  final int? bitrateMax;
+  int? bitrateMax;
   @JsonKey(name: "is_https")
-  final bool? isHttps;
+  bool? isHttps;
   @JsonKey()
-  final Order? order;
+  Order? order;
   @JsonKey()
-  final bool? reverse;
+  bool? reverse;
   @JsonKey()
-  final int limit;
+  int limit;
   @JsonKey(name: "hidebroken")
-  final bool hideBroken;
+  bool hideBroken;
 
   SearchStationsParams({
     this.name,

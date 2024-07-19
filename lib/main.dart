@@ -136,21 +136,16 @@ void showServerInfo(BuildContext context) {
 }
 
 void showSearchOptionsDialog(BuildContext context) {
-  var searchArgs = {
-    "name": TextEditingController(),
-    "country": TextEditingController(),
-    "language": TextEditingController(),
-    "tag": TextEditingController(),
-  };
+  var searchArgs = SearchStationsParams();
   void doSearch() async {
     // TODO: Show progress indicator
-    var results = await searchStations(SearchStationsParams.fromJson(
-        searchArgs.map((key, value) => MapEntry(key, value.value.text))));
+    var results = await searchStations(searchArgs);
     if (context.mounted) {
       Provider.of<PlayerModel>(context, listen: false).stations = results;
     }
   }
 
+  final countriesFuture = getCountries();
   showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -158,58 +153,94 @@ void showSearchOptionsDialog(BuildContext context) {
           child: SafeArea(
               child: Padding(
             padding: const EdgeInsets.all(10),
-            child: Flex(
-              direction: Axis.vertical,
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text("Search", style: Theme.of(context).textTheme.titleLarge),
-                Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("Name: "),
-                      Expanded(child: TextField(controller: searchArgs["name"]))
-                    ]),
-                Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("Country: "),
-                      Expanded(
-                          child: TextField(controller: searchArgs["country"]))
-                    ]),
-                Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("Language: "),
-                      Expanded(
-                          child: TextField(controller: searchArgs["language"]))
-                    ]),
-                Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text("Tag: "),
-                      Expanded(child: TextField(controller: searchArgs["tag"]))
-                    ]),
-                Padding(
-                    padding: const EdgeInsets.only(top: 20),
-                    child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          ElevatedButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                                doSearch();
-                              },
-                              child: const Text("OK")),
-                          OutlinedButton(
-                              onPressed: () {
-                                Navigator.pop(context);
-                              },
-                              child: const Text("Cancel"))
-                        ])),
-              ],
-            ),
+            child: FutureBuilder(
+                future: countriesFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    final countryEntries = <DropdownMenuEntry<dynamic>>[
+                          const DropdownMenuEntry(value: null, label: "ANY")
+                        ] +
+                        snapshot.data!
+                            .map((e) =>
+                                DropdownMenuEntry(value: e.name, label: e.code))
+                            .toList(growable: false);
+
+                    return Flex(
+                      direction: Axis.vertical,
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      mainAxisAlignment: MainAxisAlignment.start,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text("Search",
+                            style: Theme.of(context).textTheme.titleLarge),
+                        Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text("Name: "),
+                              Expanded(
+                                  child: TextField(
+                                      onChanged: (value) =>
+                                          searchArgs.name = value))
+                            ]),
+                        Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text("Country: "),
+                              Expanded(
+                                  child: DropdownMenu(
+                                      initialSelection: countryEntries[0].value,
+                                      dropdownMenuEntries: countryEntries,
+                                      onSelected: (value) =>
+                                          searchArgs.country = value))
+                            ]),
+                        Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text("Language: "),
+                              Expanded(
+                                  child: TextField(
+                                      onChanged: (value) =>
+                                          searchArgs.language = value))
+                            ]),
+                        Row(
+                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            children: [
+                              const Text("Tag: "),
+                              Expanded(
+                                  child: TextField(
+                                      onChanged: (value) =>
+                                          searchArgs.tag = value))
+                            ]),
+                        Padding(
+                            padding: const EdgeInsets.only(top: 20),
+                            child: Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        doSearch();
+                                      },
+                                      child: const Text("OK")),
+                                  OutlinedButton(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                      },
+                                      child: const Text("Cancel"))
+                                ])),
+                      ],
+                    );
+                  }
+
+                  if (snapshot.hasError) {
+                    return Center(
+                        child: Text(
+                            "Failed to prepare search dialog: ${snapshot.error}"));
+                  }
+
+                  return const Center(child: CircularProgressIndicator());
+                }),
           ))));
 }
 
