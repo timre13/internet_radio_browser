@@ -5,3 +5,4 @@ targets:
         enabled: true
         generate_for:
           - lib/api/structs/*.dart
+          - lib/api/*.dart

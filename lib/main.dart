@@ -4,7 +4,6 @@ import 'dart:math';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
-import 'package:internet_radio_browser/api/enums.dart';
 import 'package:internet_radio_browser/api/query.dart';
 import 'package:provider/provider.dart';
 import 'package:text_scroll/text_scroll.dart';
@@ -37,17 +36,19 @@ class PlayerModel extends ChangeNotifier {
     );
      */
 
-    searchStations(
+    /*
+    searchStations(SearchStationsParams(
             countryCode: "jp",
             hideBroken: true,
             order: Order.votes,
             reverse: true,
-            limit: 999999)
+            limit: 100))
         .then((value) {
       print("Found ${value.length} stations");
       stations = value;
       notifyListeners();
     });
+     */
 
     _audioHandlerFuture = AudioService.init(
         builder: () => CustomAudioHandler(),
@@ -134,6 +135,84 @@ void showServerInfo(BuildContext context) {
               })));
 }
 
+void showSearchOptionsDialog(BuildContext context) {
+  var searchArgs = {
+    "name": TextEditingController(),
+    "country": TextEditingController(),
+    "language": TextEditingController(),
+    "tag": TextEditingController(),
+  };
+  void doSearch() async {
+    // TODO: Show progress indicator
+    var results = await searchStations(SearchStationsParams.fromJson(
+        searchArgs.map((key, value) => MapEntry(key, value.value.text))));
+    if (context.mounted) {
+      Provider.of<PlayerModel>(context, listen: false).stations = results;
+    }
+  }
+
+  showDialog(
+      context: context,
+      builder: (context) => Dialog(
+          shape: Border.all(),
+          child: SafeArea(
+              child: Padding(
+            padding: const EdgeInsets.all(10),
+            child: Flex(
+              direction: Axis.vertical,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisAlignment: MainAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text("Search", style: Theme.of(context).textTheme.titleLarge),
+                Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Name: "),
+                      Expanded(child: TextField(controller: searchArgs["name"]))
+                    ]),
+                Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Country: "),
+                      Expanded(
+                          child: TextField(controller: searchArgs["country"]))
+                    ]),
+                Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Language: "),
+                      Expanded(
+                          child: TextField(controller: searchArgs["language"]))
+                    ]),
+                Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      const Text("Tag: "),
+                      Expanded(child: TextField(controller: searchArgs["tag"]))
+                    ]),
+                Padding(
+                    padding: const EdgeInsets.only(top: 20),
+                    child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          ElevatedButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                                doSearch();
+                              },
+                              child: const Text("OK")),
+                          OutlinedButton(
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: const Text("Cancel"))
+                        ])),
+              ],
+            ),
+          ))));
+}
+
 class _AppState extends State<App> {
   late DraggableScrollableController sheetCont;
 
@@ -164,13 +243,16 @@ class _AppState extends State<App> {
                 children: [
                   Scaffold(
                       appBar: AppBar(
-                        actions: [
-                          IconButton(
-                              onPressed: () => showServerInfo(context),
-                              icon: const Icon(Icons.dns),
-                              tooltip: "Show Server Information")
-                        ],
-                      ),
+                          actions: [
+                            IconButton(
+                                onPressed: () => showServerInfo(context),
+                                icon: const Icon(Icons.dns),
+                                tooltip: "Show Server Information")
+                          ],
+                          leading: IconButton(
+                              onPressed: () => showSearchOptionsDialog(context),
+                              icon: const Icon(Icons.search),
+                              tooltip: "Show Search Options")),
                       body: SafeArea(
                           child: Padding(
                               padding:
