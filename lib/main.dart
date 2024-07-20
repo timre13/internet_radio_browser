@@ -137,141 +137,144 @@ void showServerInfo(BuildContext context) {
               })));
 }
 
-void showSearchOptionsDialog(BuildContext context) {
+class SearchDialog extends StatefulWidget {
+  const SearchDialog({super.key});
+
+  @override
+  State<SearchDialog> createState() => _SearchDialogState();
+}
+
+class _SearchDialogState extends State<SearchDialog> {
   var searchArgs = SearchStationsParams();
-  void doSearch() async {
-    // TODO: Show progress indicator
-    var results = await searchStations(searchArgs);
-    if (context.mounted) {
-      Provider.of<PlayerModel>(context, listen: false).stations = results;
-    }
+
+  @override
+  Widget build(BuildContext context) {
+    final countriesFuture = getCountries();
+    final languagesFuture = getLanguages();
+
+    return Dialog(
+        shape: Border.all(),
+        child: SafeArea(
+            child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: FutureBuilder(
+              future: Future.wait([countriesFuture, languagesFuture]),
+              builder: (context, snapshot) {
+                if (snapshot.hasData) {
+                  final countryEntries = <DropdownMenuItem<dynamic>>[
+                        const DropdownMenuItem(value: null, child: Text("ANY"))
+                      ] +
+                      (snapshot.data![0] as List<Country>)
+                          .map((e) => DropdownMenuItem(
+                              value: e.name,
+                              child: Text(e.name,
+                                  overflow: TextOverflow.ellipsis)))
+                          .toList(growable: false);
+                  final languageEntries = <DropdownMenuItem<dynamic>>[
+                        const DropdownMenuItem(value: null, child: Text("ANY"))
+                      ] +
+                      (snapshot.data![1] as List<Language>)
+                          .map((e) => DropdownMenuItem(
+                              value: e.name,
+                              child: Text(e.name,
+                                  overflow: TextOverflow.ellipsis)))
+                          .toList(growable: false);
+
+                  return Flex(
+                    direction: Axis.vertical,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text("Search",
+                          style: Theme.of(context).textTheme.titleLarge),
+                      Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text("Name: "),
+                            Expanded(
+                                child: TextField(
+                                    onChanged: (value) =>
+                                        searchArgs.name = value))
+                          ]),
+                      Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            const Text("Country: "),
+                            Expanded(
+                                child: DropdownButton(
+                                    value: searchArgs.country,
+                                    items: countryEntries,
+                                    isExpanded: true,
+                                    onChanged: (value) => setState(() {
+                                          searchArgs.country = value;
+                                        })))
+                          ]),
+                      Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            const Text("Language: "),
+                            Expanded(
+                                child: DropdownButton(
+                                    value: searchArgs.language,
+                                    items: languageEntries,
+                                    isExpanded: true,
+                                    onChanged: (value) => setState(() {
+                                          searchArgs.language = value;
+                                        })))
+                          ]),
+                      Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            const Text("Tag: "),
+                            Expanded(
+                                child: TextField(
+                                    onChanged: (value) =>
+                                        searchArgs.tag = value))
+                          ]),
+                      Padding(
+                          padding: const EdgeInsets.only(top: 20),
+                          child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                ElevatedButton(
+                                    onPressed: () async {
+                                      // TODO: Show progress indicator
+                                      var results =
+                                          await searchStations(searchArgs);
+                                      assert(context.mounted);
+                                      if (context.mounted) {
+                                        Provider.of<PlayerModel>(context,
+                                                listen: false)
+                                            .stations = results;
+                                        Navigator.pop(context);
+                                      }
+                                    },
+                                    child: const Text("OK")),
+                                OutlinedButton(
+                                    onPressed: () {
+                                      Navigator.pop(context);
+                                    },
+                                    child: const Text("Cancel"))
+                              ])),
+                    ],
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return Center(
+                      child: Text(
+                          "Failed to prepare search dialog: ${snapshot.error}"));
+                }
+
+                return const Center(child: CircularProgressIndicator());
+              }),
+        )));
   }
+}
 
-  final countriesFuture = getCountries();
-  final languagesFuture = getLanguages();
-  showDialog(
-      context: context,
-      builder: (context) => Dialog(
-          shape: Border.all(),
-          child: SafeArea(
-              child: Padding(
-            padding: const EdgeInsets.all(10),
-            child: FutureBuilder(
-                future: Future.wait([countriesFuture, languagesFuture]),
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    final countryEntries = <DropdownMenuEntry<dynamic>>[
-                          const DropdownMenuEntry(value: null, label: "ANY")
-                        ] +
-                        (snapshot.data![0] as List<Country>)
-                            .map((e) => DropdownMenuEntry(
-                                value: e.name,
-                                label: e.name,
-                                labelWidget: SizedBox(
-                                    width:
-                                        MediaQuery.of(context).size.width - 50,
-                                    child: Text(e.name,
-                                        overflow: TextOverflow.ellipsis))))
-                            .toList(growable: false);
-                    final languageEntries = <DropdownMenuEntry<dynamic>>[
-                          const DropdownMenuEntry(value: null, label: "ANY")
-                        ] +
-                        (snapshot.data![1] as List<Language>)
-                            .map((e) => DropdownMenuEntry(
-                                value: e.name,
-                                label: e.name,
-                                labelWidget: SizedBox(
-                                    width:
-                                        MediaQuery.of(context).size.width - 50,
-                                    child: Text(e.name,
-                                        overflow: TextOverflow.ellipsis))))
-                            .toList(growable: false);
-
-                    return Flex(
-                      direction: Axis.vertical,
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      mainAxisAlignment: MainAxisAlignment.start,
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text("Search",
-                            style: Theme.of(context).textTheme.titleLarge),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text("Name: "),
-                              Expanded(
-                                  child: TextField(
-                                      onChanged: (value) =>
-                                          searchArgs.name = value))
-                            ]),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Text("Country: "),
-                              SizedBox(
-                                  width: 100,
-                                  child: ClipRect(
-                                      child: DropdownMenu(
-                                          initialSelection:
-                                              countryEntries[0].value,
-                                          dropdownMenuEntries: countryEntries,
-                                          onSelected: (value) =>
-                                              searchArgs.country = value)))
-                            ]),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.start,
-                            children: [
-                              const Text("Language: "),
-                              SizedBox(
-                                  width: 100,
-                                  child: ClipRect(
-                                      child: DropdownMenu(
-                                          initialSelection:
-                                              languageEntries[0].value,
-                                          dropdownMenuEntries: languageEntries,
-                                          onSelected: (value) =>
-                                              searchArgs.language = value)))
-                            ]),
-                        Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                            children: [
-                              const Text("Tag: "),
-                              Expanded(
-                                  child: TextField(
-                                      onChanged: (value) =>
-                                          searchArgs.tag = value))
-                            ]),
-                        Padding(
-                            padding: const EdgeInsets.only(top: 20),
-                            child: Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  ElevatedButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                        doSearch();
-                                      },
-                                      child: const Text("OK")),
-                                  OutlinedButton(
-                                      onPressed: () {
-                                        Navigator.pop(context);
-                                      },
-                                      child: const Text("Cancel"))
-                                ])),
-                      ],
-                    );
-                  }
-
-                  if (snapshot.hasError) {
-                    return Center(
-                        child: Text(
-                            "Failed to prepare search dialog: ${snapshot.error}"));
-                  }
-
-                  return const Center(child: CircularProgressIndicator());
-                }),
-          ))));
+void showSearchOptionsDialog(BuildContext context) {
+  showDialog(context: context, builder: (context) => const SearchDialog());
 }
 
 class _AppState extends State<App> {
