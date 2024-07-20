@@ -10,6 +10,8 @@ import 'package:text_scroll/text_scroll.dart';
 
 import 'CustomAudioHandler.dart';
 import 'StationListWidget.dart';
+import 'api/structs/country.dart';
+import 'api/structs/language.dart';
 import 'api/structs/station.dart';
 
 void main() {
@@ -146,6 +148,7 @@ void showSearchOptionsDialog(BuildContext context) {
   }
 
   final countriesFuture = getCountries();
+  final languagesFuture = getLanguages();
   showDialog(
       context: context,
       builder: (context) => Dialog(
@@ -154,15 +157,34 @@ void showSearchOptionsDialog(BuildContext context) {
               child: Padding(
             padding: const EdgeInsets.all(10),
             child: FutureBuilder(
-                future: countriesFuture,
+                future: Future.wait([countriesFuture, languagesFuture]),
                 builder: (context, snapshot) {
                   if (snapshot.hasData) {
                     final countryEntries = <DropdownMenuEntry<dynamic>>[
                           const DropdownMenuEntry(value: null, label: "ANY")
                         ] +
-                        snapshot.data!
-                            .map((e) =>
-                                DropdownMenuEntry(value: e.name, label: e.code))
+                        (snapshot.data![0] as List<Country>)
+                            .map((e) => DropdownMenuEntry(
+                                value: e.name,
+                                label: e.name,
+                                labelWidget: SizedBox(
+                                    width:
+                                        MediaQuery.of(context).size.width - 50,
+                                    child: Text(e.name,
+                                        overflow: TextOverflow.ellipsis))))
+                            .toList(growable: false);
+                    final languageEntries = <DropdownMenuEntry<dynamic>>[
+                          const DropdownMenuEntry(value: null, label: "ANY")
+                        ] +
+                        (snapshot.data![1] as List<Language>)
+                            .map((e) => DropdownMenuEntry(
+                                value: e.name,
+                                label: e.name,
+                                labelWidget: SizedBox(
+                                    width:
+                                        MediaQuery.of(context).size.width - 50,
+                                    child: Text(e.name,
+                                        overflow: TextOverflow.ellipsis))))
                             .toList(growable: false);
 
                     return Flex(
@@ -183,24 +205,32 @@ void showSearchOptionsDialog(BuildContext context) {
                                           searchArgs.name = value))
                             ]),
                         Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               const Text("Country: "),
-                              Expanded(
-                                  child: DropdownMenu(
-                                      initialSelection: countryEntries[0].value,
-                                      dropdownMenuEntries: countryEntries,
-                                      onSelected: (value) =>
-                                          searchArgs.country = value))
+                              SizedBox(
+                                  width: 100,
+                                  child: ClipRect(
+                                      child: DropdownMenu(
+                                          initialSelection:
+                                              countryEntries[0].value,
+                                          dropdownMenuEntries: countryEntries,
+                                          onSelected: (value) =>
+                                              searchArgs.country = value)))
                             ]),
                         Row(
-                            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                            mainAxisAlignment: MainAxisAlignment.start,
                             children: [
                               const Text("Language: "),
-                              Expanded(
-                                  child: TextField(
-                                      onChanged: (value) =>
-                                          searchArgs.language = value))
+                              SizedBox(
+                                  width: 100,
+                                  child: ClipRect(
+                                      child: DropdownMenu(
+                                          initialSelection:
+                                              languageEntries[0].value,
+                                          dropdownMenuEntries: languageEntries,
+                                          onSelected: (value) =>
+                                              searchArgs.language = value)))
                             ]),
                         Row(
                             mainAxisAlignment: MainAxisAlignment.spaceBetween,
