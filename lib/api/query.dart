@@ -9,6 +9,7 @@ import 'package:internet_radio_browser/api/structs/country.dart';
 import 'package:json_annotation/json_annotation.dart';
 
 import 'enums.dart';
+import 'structs/language.dart';
 import 'structs/server_stats.dart';
 import 'structs/station.dart';
 
@@ -185,6 +186,24 @@ Future<List<Country>> getCountries() async {
   }
 
   return Future.value(_countryCache);
+}
+
+List<Language>? _languageCache;
+Future<List<Language>> getLanguages() async {
+  if (_countryCache == null) {
+    var url = Uri.http(apiBaseUrl, "/json/languages");
+
+    if (kDebugMode) {
+      print("Sending request to $url");
+    }
+    var resp = await _client.get(url);
+
+    _languageCache = (jsonDecode(utf8.decode(resp.bodyBytes)) as List<dynamic>)
+        .map((e) => Language.fromJson(e))
+        .toList(growable: false);
+  }
+
+  return Future.value(_languageCache);
 }
 
 Future<ServerStats> getServerStats() async {
