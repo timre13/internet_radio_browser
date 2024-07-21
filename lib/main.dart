@@ -15,8 +15,8 @@ import 'api/structs/language.dart';
 import 'api/structs/station.dart';
 
 void main() {
-  runApp(
-      ChangeNotifierProvider(create: (context) => PlayerModel(), child: App()));
+  runApp(ChangeNotifierProvider(
+      create: (context) => PlayerModel(), child: const App()));
 }
 
 class PlayerModel extends ChangeNotifier {
@@ -24,6 +24,7 @@ class PlayerModel extends ChangeNotifier {
   int _selStationI = -1;
   late Future<AudioHandler> _audioHandlerFuture;
   late AudioHandler _audioHandler;
+  var _searchArgs = SearchStationsParams();
 
   PlayerModel() {
     /*
@@ -98,7 +99,7 @@ class PlayerModel extends ChangeNotifier {
 }
 
 class App extends StatefulWidget {
-  App({super.key});
+  const App({super.key});
   @override
   State<App> createState() => _AppState();
 }
@@ -137,6 +138,8 @@ void showServerInfo(BuildContext context) {
               })));
 }
 
+SearchStationsParams searchArgs = SearchStationsParams();
+
 class SearchDialog extends StatefulWidget {
   const SearchDialog({super.key});
 
@@ -145,7 +148,8 @@ class SearchDialog extends StatefulWidget {
 }
 
 class _SearchDialogState extends State<SearchDialog> {
-  var searchArgs = SearchStationsParams();
+  SearchStationsParams currentSearchArgs =
+      SearchStationsParams.from(searchArgs);
 
   @override
   Widget build(BuildContext context) {
@@ -194,8 +198,10 @@ class _SearchDialogState extends State<SearchDialog> {
                             const Text("Name: "),
                             Expanded(
                                 child: TextField(
+                                    controller: TextEditingController(
+                                        text: currentSearchArgs.name),
                                     onChanged: (value) =>
-                                        searchArgs.name = value))
+                                        currentSearchArgs.name = value))
                           ]),
                       Row(
                           mainAxisAlignment: MainAxisAlignment.start,
@@ -203,11 +209,11 @@ class _SearchDialogState extends State<SearchDialog> {
                             const Text("Country: "),
                             Expanded(
                                 child: DropdownButton(
-                                    value: searchArgs.country,
+                                    value: currentSearchArgs.country,
                                     items: countryEntries,
                                     isExpanded: true,
                                     onChanged: (value) => setState(() {
-                                          searchArgs.country = value;
+                                          currentSearchArgs.country = value;
                                         })))
                           ]),
                       Row(
@@ -216,11 +222,11 @@ class _SearchDialogState extends State<SearchDialog> {
                             const Text("Language: "),
                             Expanded(
                                 child: DropdownButton(
-                                    value: searchArgs.language,
+                                    value: currentSearchArgs.language,
                                     items: languageEntries,
                                     isExpanded: true,
                                     onChanged: (value) => setState(() {
-                                          searchArgs.language = value;
+                                          currentSearchArgs.language = value;
                                         })))
                           ]),
                       Row(
@@ -229,8 +235,10 @@ class _SearchDialogState extends State<SearchDialog> {
                             const Text("Tag: "),
                             Expanded(
                                 child: TextField(
+                                    controller: TextEditingController(
+                                        text: currentSearchArgs.tag),
                                     onChanged: (value) =>
-                                        searchArgs.tag = value))
+                                        currentSearchArgs.tag = value))
                           ]),
                       Padding(
                           padding: const EdgeInsets.only(top: 20),
@@ -240,8 +248,8 @@ class _SearchDialogState extends State<SearchDialog> {
                                 ElevatedButton(
                                     onPressed: () async {
                                       // TODO: Show progress indicator
-                                      var results =
-                                          await searchStations(searchArgs);
+                                      var results = await searchStations(
+                                          currentSearchArgs);
                                       assert(context.mounted);
                                       if (context.mounted) {
                                         Provider.of<PlayerModel>(context,
@@ -249,6 +257,8 @@ class _SearchDialogState extends State<SearchDialog> {
                                             .stations = results;
                                         Navigator.pop(context);
                                       }
+                                      searchArgs = SearchStationsParams.from(
+                                          currentSearchArgs);
                                     },
                                     child: const Text("OK")),
                                 OutlinedButton(

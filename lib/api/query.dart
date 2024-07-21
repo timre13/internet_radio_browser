@@ -130,6 +130,28 @@ class SearchStationsParams {
     this.hideBroken = true,
   });
 
+  factory SearchStationsParams.from(SearchStationsParams obj) =>
+      SearchStationsParams(
+        name: obj.name,
+        nameExact: obj.nameExact,
+        country: obj.country,
+        countryExact: obj.countryExact,
+        countryCode: obj.countryCode,
+        language: obj.language,
+        languageExact: obj.languageExact,
+        tag: obj.tag,
+        tagExact: obj.tagExact,
+        tagList: obj.tagList,
+        codec: obj.codec,
+        bitrateMin: obj.bitrateMin,
+        bitrateMax: obj.bitrateMax,
+        isHttps: obj.isHttps,
+        order: obj.order,
+        reverse: obj.reverse,
+        limit: obj.limit,
+        hideBroken: obj.hideBroken,
+      );
+
   factory SearchStationsParams.fromJson(Map<String, dynamic> json) =>
       _$SearchStationsParamsFromJson(json);
 
