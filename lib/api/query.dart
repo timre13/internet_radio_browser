@@ -204,7 +204,9 @@ Future<List<Country>> getCountries() async {
 
     _countryCache = (jsonDecode(utf8.decode(resp.bodyBytes)) as List<dynamic>)
         .map((e) => Country.fromJson(e))
-        .toList(growable: false);
+        .toList();
+    var vals = <String>{};
+    _countryCache?.retainWhere((element) => vals.add(element.name));
   }
 
   return Future.value(_countryCache);
