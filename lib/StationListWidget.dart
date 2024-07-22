@@ -16,6 +16,10 @@ class _StationListWidgetState extends State<StationListWidget> {
   Widget build(BuildContext context) {
     final model = Provider.of<PlayerModel>(context);
 
+    if (model.isStationListLoading) {
+      return const Center(child: CircularProgressIndicator());
+    }
+
     bool isStationPlaying(Station s) {
       return model.playingStation != null &&
           model.playingStation!.stationuuid == s.stationuuid;

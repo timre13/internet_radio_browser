@@ -20,7 +20,7 @@ void main() {
 }
 
 class PlayerModel extends ChangeNotifier {
-  List<Station> _stations = [];
+  List<Station>? _stations = [];
   int _selStationI = -1;
   late Future<AudioHandler> _audioHandlerFuture;
   late AudioHandler _audioHandler;
@@ -46,23 +46,26 @@ class PlayerModel extends ChangeNotifier {
 
   Future<AudioHandler> get audioHandlerFuture => _audioHandlerFuture;
 
-  UnmodifiableListView<Station> get stations => UnmodifiableListView(_stations);
+  UnmodifiableListView<Station> get stations =>
+      UnmodifiableListView(_stations!);
+  bool get isStationListLoading => _stations == null;
   bool get isPlaying => _audioHandler.playbackState.value.playing;
 
   int get selStationI => _selStationI;
   bool get isStationSelected =>
-      !(selStationI == -1 || selStationI >= stations.length);
+      _stations != null &&
+      !(selStationI == -1 || selStationI >= _stations!.length);
   Station? get selStation => isStationSelected ? stations[selStationI] : null;
 
   Station? get playingStation => _playingStation;
 
-  bool get isLoading =>
+  bool get isPlayerLoading =>
       _audioHandler.playbackState.value.processingState ==
           AudioProcessingState.buffering ||
       _audioHandler.playbackState.value.processingState ==
           AudioProcessingState.loading;
 
-  set stations(List<Station> val) {
+  set stations(List<Station>? val) {
     _stations = val;
     _selStationI = -1;
     notifyListeners();
@@ -240,17 +243,19 @@ class _SearchDialogState extends State<SearchDialog> {
                               children: [
                                 ElevatedButton(
                                     onPressed: () async {
-                                      // TODO: Show progress indicator
-                                      var results = await searchStations(
+                                      assert(context.mounted);
+                                      if (!context.mounted) {
+                                        return;
+                                      }
+                                      PlayerModel model =
+                                          Provider.of<PlayerModel>(context,
+                                              listen: false);
+                                      model.stations = null;
+                                      Navigator.pop(context);
+                                      final results = await searchStations(
                                           currentSearchArgs);
                                       print("Found ${results.length} stations");
-                                      assert(context.mounted);
-                                      if (context.mounted) {
-                                        Provider.of<PlayerModel>(context,
-                                                listen: false)
-                                            .stations = results;
-                                        Navigator.pop(context);
-                                      }
+                                      model.stations = results;
                                       searchArgs = SearchStationsParams.from(
                                           currentSearchArgs);
                                     },
@@ -449,7 +454,8 @@ class _PlayerButtonState extends State<PlayerButton> {
         SizedBox.square(
             dimension: widget.size,
             child: CircularProgressIndicator(
-                value: widget.model.isLoading ? null : 0, color: Colors.amber)),
+                value: widget.model.isPlayerLoading ? null : 0,
+                color: Colors.amber)),
         IconButton(
           onPressed: () async {
             if (widget.model.playingStation == null) {
