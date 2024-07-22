@@ -4,6 +4,7 @@ import 'dart:math';
 import 'package:audio_service/audio_service.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart';
+import 'package:internet_radio_browser/api/enums.dart';
 import 'package:internet_radio_browser/api/query.dart';
 import 'package:provider/provider.dart';
 import 'package:text_scroll/text_scroll.dart';
@@ -179,6 +180,14 @@ class _SearchDialogState extends State<SearchDialog> {
                               child: Text(e.name,
                                   overflow: TextOverflow.ellipsis)))
                           .toList(growable: false);
+                  final orderEntries = <DropdownMenuItem<dynamic>>[
+                        const DropdownMenuItem(
+                            value: null, child: Text("DEFAULT"))
+                      ] +
+                      (Order.values
+                          .map((e) =>
+                              DropdownMenuItem(value: e, child: Text(e.name)))
+                          .toList(growable: false));
 
                   return Flex(
                     direction: Axis.vertical,
@@ -235,6 +244,29 @@ class _SearchDialogState extends State<SearchDialog> {
                                         text: currentSearchArgs.tag),
                                     onChanged: (value) =>
                                         currentSearchArgs.tag = value))
+                          ]),
+                      Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            const Text("Order: "),
+                            Expanded(
+                                child: DropdownButton(
+                                    value: currentSearchArgs.order,
+                                    items: orderEntries,
+                                    isExpanded: true,
+                                    onChanged: (value) => setState(() {
+                                          currentSearchArgs.order = value;
+                                        })))
+                          ]),
+                      Row(
+                          mainAxisAlignment: MainAxisAlignment.start,
+                          children: [
+                            const Text("Reverse order: "),
+                            Checkbox(
+                                value: currentSearchArgs.reverse ?? false,
+                                onChanged: (value) => setState(() {
+                                      currentSearchArgs.reverse = value;
+                                    }))
                           ]),
                       Padding(
                           padding: const EdgeInsets.only(top: 20),
