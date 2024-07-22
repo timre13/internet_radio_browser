@@ -359,7 +359,7 @@ class _AppState extends State<App> {
                   child: Text("Failed to initialize: ${snapshot.error}"));
             }
 
-            return const CircularProgressIndicator();
+            return const Center(child: CircularProgressIndicator());
           },
         ),
       ),
