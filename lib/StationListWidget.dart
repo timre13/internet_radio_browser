@@ -38,8 +38,7 @@ class _StationListWidgetState extends State<StationListWidget> {
                     assert(model.selStation != null);
                     print("Playing URL: ${model.selStation?.urlResolved}");
                     print(model.selStation);
-                    await model.audioHandler
-                        ?.playMediaItem(model.selStation!.toMediaItem());
+                    await model.playerPlayStation(model.selStation!);
                     print("Set URL");
                     print("Started");
                   },

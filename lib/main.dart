@@ -24,35 +24,9 @@ class PlayerModel extends ChangeNotifier {
   int _selStationI = -1;
   late Future<AudioHandler> _audioHandlerFuture;
   late AudioHandler _audioHandler;
-  var _searchArgs = SearchStationsParams();
+  Station? _playingStation;
 
   PlayerModel() {
-    /*
-    getStationsBy(Filter.countrycodeexact, "jp",
-            hideBroken: true, order: Order.votes, reverse: true, limit: 100)
-        .then(
-      (value) {
-        print("Found ${value.length} stations");
-        stations = value;
-        notifyListeners();
-      },
-    );
-     */
-
-    /*
-    searchStations(SearchStationsParams(
-            countryCode: "jp",
-            hideBroken: true,
-            order: Order.votes,
-            reverse: true,
-            limit: 100))
-        .then((value) {
-      print("Found ${value.length} stations");
-      stations = value;
-      notifyListeners();
-    });
-     */
-
     _audioHandlerFuture = AudioService.init(
         builder: () => CustomAudioHandler(),
         config: const AudioServiceConfig(
@@ -79,7 +53,8 @@ class PlayerModel extends ChangeNotifier {
   bool get isStationSelected =>
       !(selStationI == -1 || selStationI >= stations.length);
   Station? get selStation => isStationSelected ? stations[selStationI] : null;
-  AudioHandler get audioHandler => _audioHandler;
+
+  Station? get playingStation => _playingStation;
 
   bool get isLoading =>
       _audioHandler.playbackState.value.processingState ==
@@ -89,11 +64,29 @@ class PlayerModel extends ChangeNotifier {
 
   set stations(List<Station> val) {
     _stations = val;
+    _selStationI = -1;
     notifyListeners();
   }
 
   set selStationI(int val) {
     _selStationI = val;
+    notifyListeners();
+  }
+
+  Future<void> playerPlayStation(Station station) async {
+    _playingStation = station;
+    notifyListeners();
+    await _audioHandler.playMediaItem(station.toMediaItem());
+    notifyListeners();
+  }
+
+  Future<void> playerPause() async {
+    await _audioHandler.pause();
+    notifyListeners();
+  }
+
+  Future<void> playerResume() async {
+    await _audioHandler.play();
     notifyListeners();
   }
 }
@@ -250,6 +243,7 @@ class _SearchDialogState extends State<SearchDialog> {
                                       // TODO: Show progress indicator
                                       var results = await searchStations(
                                           currentSearchArgs);
+                                      print("Found ${results.length} stations");
                                       assert(context.mounted);
                                       if (context.mounted) {
                                         Provider.of<PlayerModel>(context,
@@ -408,22 +402,22 @@ class _SheetChildState extends State<SheetChild> {
                   ] +
                   (widget.scrollController.size >= 0.6
                       ? <Widget>[
-                          TextScroll(model.selStation?.name ?? "---",
+                          TextScroll(model.playingStation?.name ?? "---",
                               mode: TextScrollMode.endless,
                               intervalSpaces: 10,
                               style: const TextStyle(fontSize: 30)),
-                          Text(model.selStation?.url ?? "",
+                          Text(model.playingStation?.url ?? "",
                               textAlign: TextAlign.center),
-                          Text(model.selStation?.homepage ?? "",
+                          Text(model.playingStation?.homepage ?? "",
                               textAlign: TextAlign.center),
-                          Text(model.selStation?.country ?? "",
+                          Text(model.playingStation?.country ?? "",
                               textAlign: TextAlign.center),
-                          Text(model.selStation?.language.join(", ") ?? "",
+                          Text(model.playingStation?.language.join(", ") ?? "",
                               textAlign: TextAlign.center),
                           Text(
-                              model.selStation != null &&
-                                      model.selStation!.bitrate != 0
-                                  ? "${model.selStation!.bitrate} kbps"
+                              model.playingStation != null &&
+                                      model.playingStation!.bitrate != 0
+                                  ? "${model.playingStation!.bitrate} kbps"
                                   : "",
                               textAlign: TextAlign.center),
                         ]
@@ -458,13 +452,13 @@ class _PlayerButtonState extends State<PlayerButton> {
                 value: widget.model.isLoading ? null : 0, color: Colors.amber)),
         IconButton(
           onPressed: () async {
-            if (!widget.model.isStationSelected) {
+            if (widget.model.playingStation == null) {
               return;
             }
             if (widget.model.isPlaying) {
-              await widget.model.audioHandler.pause();
+              await widget.model.playerPause();
             } else {
-              await widget.model.audioHandler.play();
+              await widget.model.playerResume();
             }
             print("Toggle");
           },
