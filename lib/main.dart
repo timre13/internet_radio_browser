@@ -337,7 +337,7 @@ class _AppState extends State<App> {
         MediaQuery.sizeOf(context).height * minSheetHeightRatio;
 
     return MaterialApp(
-      title: 'Flutter Demo',
+      title: 'Internet Radio Browser',
       theme: ThemeData.dark(
         useMaterial3: true,
       ),
