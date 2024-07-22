@@ -276,7 +276,9 @@ class _SearchDialogState extends State<SearchDialog> {
                           "Failed to prepare search dialog: ${snapshot.error}"));
                 }
 
-                return const Center(child: CircularProgressIndicator());
+                return const AspectRatio(
+                    aspectRatio: 1,
+                    child: Center(child: CircularProgressIndicator()));
               }),
         )));
   }
