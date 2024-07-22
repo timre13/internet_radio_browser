@@ -15,6 +15,7 @@ import 'api/structs/country.dart';
 import 'api/structs/language.dart';
 import 'api/structs/station.dart';
 
+final navigatorKey = GlobalKey<NavigatorState>();
 void main() {
   runApp(ChangeNotifierProvider(
       create: (context) => PlayerModel(), child: const App()));
@@ -148,6 +149,34 @@ class _SearchDialogState extends State<SearchDialog> {
   SearchStationsParams currentSearchArgs =
       SearchStationsParams.from(searchArgs);
 
+  void _onSearchButtonPressed() async {
+    assert(context.mounted);
+    if (!context.mounted) {
+      return;
+    }
+    PlayerModel model = Provider.of<PlayerModel>(context, listen: false);
+    model.stations = null;
+    Navigator.pop(context);
+    List<Station> results;
+    try {
+      results = await searchStations(currentSearchArgs);
+    } catch (e) {
+      assert(navigatorKey.currentContext != null);
+      showDialog(
+          context: navigatorKey.currentContext!,
+          builder: (context) => Dialog(
+              child: SizedBox.square(
+                  dimension: MediaQuery.sizeOf(navigatorKey.currentContext!)
+                      .shortestSide,
+                  child: Center(child: Text("Failed to load stations: $e")))));
+      model.stations = [];
+      return;
+    }
+    print("Found ${results.length} stations");
+    model.stations = results;
+    searchArgs = SearchStationsParams.from(currentSearchArgs);
+  }
+
   @override
   Widget build(BuildContext context) {
     final countriesFuture = getCountries();
@@ -274,23 +303,7 @@ class _SearchDialogState extends State<SearchDialog> {
                               mainAxisAlignment: MainAxisAlignment.spaceBetween,
                               children: [
                                 ElevatedButton(
-                                    onPressed: () async {
-                                      assert(context.mounted);
-                                      if (!context.mounted) {
-                                        return;
-                                      }
-                                      PlayerModel model =
-                                          Provider.of<PlayerModel>(context,
-                                              listen: false);
-                                      model.stations = null;
-                                      Navigator.pop(context);
-                                      final results = await searchStations(
-                                          currentSearchArgs);
-                                      print("Found ${results.length} stations");
-                                      model.stations = results;
-                                      searchArgs = SearchStationsParams.from(
-                                          currentSearchArgs);
-                                    },
+                                    onPressed: _onSearchButtonPressed,
                                     child: const Text("OK")),
                                 OutlinedButton(
                                     onPressed: () {
@@ -341,6 +354,7 @@ class _AppState extends State<App> {
       theme: ThemeData.dark(
         useMaterial3: true,
       ),
+      navigatorKey: navigatorKey,
       home: Scaffold(
         body: FutureBuilder(
           future: Provider.of<PlayerModel>(context).audioHandlerFuture,
