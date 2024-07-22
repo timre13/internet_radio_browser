@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'api/structs/station.dart';
 import 'main.dart';
 
 class StationListWidget extends StatefulWidget {
@@ -14,6 +15,11 @@ class _StationListWidgetState extends State<StationListWidget> {
   @override
   Widget build(BuildContext context) {
     final model = Provider.of<PlayerModel>(context);
+
+    bool isStationPlaying(Station s) {
+      return model.playingStation != null &&
+          model.playingStation!.stationuuid == s.stationuuid;
+    }
 
     return SingleChildScrollView(
         child: DataTable(
@@ -32,7 +38,7 @@ class _StationListWidgetState extends State<StationListWidget> {
                     DataCell(Text(e.votes.toString())),
                     DataCell(Text(e.languagecodes.join("+"))),
                   ],
-                  selected: model.selStationI == i,
+                  selected: isStationPlaying(e),
                   onSelectChanged: (value) async {
                     model.selStationI = i;
                     assert(model.selStation != null);
@@ -42,7 +48,7 @@ class _StationListWidgetState extends State<StationListWidget> {
                     print("Set URL");
                     print("Started");
                   },
-                  color: WidgetStatePropertyAll(model.selStationI == i
+                  color: WidgetStatePropertyAll(isStationPlaying(e)
                       ? Colors.amber.withAlpha(140)
                       : Colors.transparent))))
           .values
